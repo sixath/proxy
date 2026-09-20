@@ -55,7 +55,9 @@ func main() {
 	}
 }
 
-const version = "v1.0.0"
+// version 为构建版本号，编译时可用
+// -ldflags "-X main.version=v1.2.3" 覆盖，Dockerfile 与 CI 均通过该方式注入。
+var version = "v1.0.0"
 
 func usage() {
 	fmt.Fprintf(flag.CommandLine.Output(), `用法: proxy [选项]

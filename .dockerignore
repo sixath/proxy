@@ -1,0 +1,11 @@
+.git/
+.github/
+.idea/
+.vscode/
+*.exe
+*.md
+!README.md
+proxy
+dist/
+build/
+config.local.yaml

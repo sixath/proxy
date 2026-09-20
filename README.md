@@ -38,10 +38,26 @@ go build -o proxy .
 # 纯命令行启动，要求账号认证
 ./proxy -socks5 :1080 -http :8080 -user dbuser -pass dbpass
 
-# Docker
+# 拉取预构建镜像（GHCR，linux/amd64 + linux/arm64）
+docker pull ghcr.io/sixath/proxy:latest
+
+# 用镜像内置默认配置启动（SOCKS5 :1080 + HTTP :8080）
+docker run --rm -p 1080:1080 -p 8080:8080 ghcr.io/sixath/proxy:latest
+
+# 挂载自定义配置
+docker run --rm -p 1080:1080 -p 8080:8080 \
+  -v $PWD/config.yaml:/etc/proxy/config.yaml ghcr.io/sixath/proxy:latest
+
+# 本地构建
 docker build -t proxy:latest .
-docker run --rm -p 1080:1080 -p 8080:8080 -v $PWD/config.yaml:/etc/proxy/config.yaml proxy:latest
+
+# 多架构构建并推送到自己的仓库
+docker buildx build --platform linux/amd64,linux/arm64 \
+  -t <your-registry>/proxy:latest --push .
 ```
+
+> 镜像内已内置 `config.yaml` 默认配置，不挂载也能直接跑。
+> 容器内以非 root 用户（`uid 10001`）运行。
 
 ## 使用场景
 
@@ -197,7 +213,8 @@ acl:
 │   ├── relay/                  双向 TCP 转发（隧道核心）
 │   ├── socks5/                 SOCKS5 服务端 + 客户端拨号器
 │   └── httpproxy/              HTTP 代理服务端
-└── Dockerfile
+├── .github/workflows/         CI：构建并推送多架构镜像到 GHCR
+└── Dockerfile                 多阶段构建，产物为静态二进制 + alpine
 ```
 
 ## 开发
