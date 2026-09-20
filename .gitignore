@@ -1,0 +1,19 @@
+# 编译产物
+/proxy
+/proxy.exe
+/dist/
+/bin/
+
+# 测试与覆盖率
+*.out
+*.test
+coverage.txt
+
+# 本地配置（不要提交含密码的配置）
+config.local.yaml
+
+# 编辑器
+.vscode/
+.idea/
+*.swp
+.DS_Store

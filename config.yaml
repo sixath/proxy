@@ -1,0 +1,70 @@
+# 代理服务器示例配置
+# 所有字段均可省略，省略时使用默认值。
+
+log:
+  # 日志级别：debug / info / warn / error
+  level: info
+  # 输出格式：text / json
+  format: text
+  # 输出目标：stdout / stderr / 文件路径
+  output: stdout
+
+socks5:
+  enabled: true
+  # 监听地址
+  listen: ":1080"
+  # 连接目标服务器超时
+  connect_timeout: 10s
+  # 连接空闲超时，0 表示不限制
+  idle_timeout: 5m
+  # 半关闭宽限时长
+  grace_timeout: 15s
+  # 是否支持 UDP ASSOCIATE
+  udp: true
+  # 是否支持 BIND 命令（FTP 主动模式等场景，默认关闭）
+  bind: false
+  udp_buffer_size: 65536
+  udp_idle_timeout: 5m
+  auth:
+    # 为 true 时强制要求用户名/密码认证
+    enabled: false
+    users:
+      - username: dbuser
+        password: dbpass
+
+http:
+  enabled: true
+  listen: ":8080"
+  connect_timeout: 10s
+  idle_timeout: 5m
+  grace_timeout: 15s
+  # 单个 HTTP 请求整体超时，0 表示不限制
+  forward_timeout: 0
+  auth:
+    enabled: false
+    users:
+      - username: webuser
+        password: webpass
+
+acl:
+  # 没有任何规则命中时的默认动作：allow / deny
+  default: allow
+  # 规则按顺序匹配，第一条命中的规则决定结果。
+  # 同一条规则内的 cidr/domain/port 是"与"关系，留空表示该维度不限制。
+  rules:
+    # 禁止访问本机与内网网段
+    - action: deny
+      cidr:
+        - "127.0.0.0/8"
+        - "10.0.0.0/8"
+        - "172.16.0.0/12"
+        - "192.168.0.0/16"
+    # 禁止访问内部域名（含子域）
+    - action: deny
+      domain:
+        - "internal.example.com"
+    # 只允许访问 3306/27017 等数据库端口（示例，按需启用）
+    # - action: allow
+    #   port:
+    #     - "3306"
+    #     - "27017"
