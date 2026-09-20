@@ -38,26 +38,36 @@ go build -o proxy .
 # 纯命令行启动，要求账号认证
 ./proxy -socks5 :1080 -http :8080 -user dbuser -pass dbpass
 
-# 拉取预构建镜像（GHCR，linux/amd64 + linux/arm64）
-docker pull ghcr.io/sixath/proxy:latest
-
-# 用镜像内置默认配置启动（SOCKS5 :1080 + HTTP :8080）
-docker run --rm -p 1080:1080 -p 8080:8080 ghcr.io/sixath/proxy:latest
-
-# 挂载自定义配置
-docker run --rm -p 1080:1080 -p 8080:8080 \
-  -v $PWD/config.yaml:/etc/proxy/config.yaml ghcr.io/sixath/proxy:latest
-
-# 本地构建
-docker build -t proxy:latest .
+# 本地构建（VERSION 会写入二进制，见 proxy -version）
+docker build --build-arg VERSION=v1.0.0 -t proxy:latest .
 
 # 多架构构建并推送到自己的仓库
 docker buildx build --platform linux/amd64,linux/arm64 \
   -t <your-registry>/proxy:latest --push .
+
+# 拉取 CI 发布的镜像
+docker pull ghcr.io/sixath/proxy:latest
 ```
 
-> 镜像内已内置 `config.yaml` 默认配置，不挂载也能直接跑。
-> 容器内以非 root 用户（`uid 10001`）运行。
+### 运行容器
+
+```bash
+# 用镜像内置默认配置启动（SOCKS5 :1080 + HTTP :8080）
+docker run --rm -p 1080:1080 -p 8080:8080 proxy:latest
+
+# 挂载自定义配置
+docker run --rm -p 1080:1080 -p 8080:8080 \
+  -v $PWD/config.yaml:/etc/proxy/config.yaml proxy:latest
+
+# 命令行开启认证（会覆盖默认 CMD，改用内置默认配置 + 指定账号）
+docker run --rm -p 1080:1080 -p 8080:8080 \
+  proxy:latest -user dbuser -pass dbpass
+```
+
+> - 镜像内已内置 `config.yaml` 默认配置，不挂载也能直接跑；容器内以非 root 用户（`uid 10001`）运行。
+> - 推送到 `main` 或打 `v*` tag 时，GitHub Actions 会自动构建 `linux/amd64` + `linux/arm64`
+>   双架构镜像并发布到 `ghcr.io/sixath/proxy`（见 `.github/workflows/docker.yml`）。
+> - GHCR 包默认是**私有**的，需要在仓库 Packages 设置里改为 public 才能匿名拉取。
 
 ## 使用场景
 
@@ -214,7 +224,8 @@ acl:
 │   ├── socks5/                 SOCKS5 服务端 + 客户端拨号器
 │   └── httpproxy/              HTTP 代理服务端
 ├── .github/workflows/         CI：构建并推送多架构镜像到 GHCR
-└── Dockerfile                 多阶段构建，产物为静态二进制 + alpine
+├── Dockerfile                 多阶段构建，产物为静态二进制 + alpine
+└── .dockerignore              精简镜像构建上下文
 ```
 
 ## 开发
